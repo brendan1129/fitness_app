@@ -34,11 +34,12 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  flutter_launcher_icons: "^0.14.3" # Use the latest version
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -87,3 +88,12 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_launcher_icons:
+  android: "true"
+  ios: "true"
+  image_path_ios: "assets/app_icon/bz-fitness-logo-512.png" # Path to your highest-res PNG (e.g., 512x512)
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  # Optional settings:
+  # adaptive_icon_background: "#ffffff" # For Android adaptive icons
+  # adaptive_icon_foreground: "assets/app_icon/icon_foreground.png" # For Android adaptive icons (if you have a separate foreground)
+  remove_alpha_ios: true # If your iOS icon has an alpha channel you want removed

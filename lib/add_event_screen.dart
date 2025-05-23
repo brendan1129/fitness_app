@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEventScreen extends StatefulWidget {
+  /// Take in selectedDate from home page
   const AddEventScreen({super.key, this.selectedDate});
 
   final DateTime? selectedDate;
@@ -11,23 +13,23 @@ class AddEventScreen extends StatefulWidget {
 }
 
 class _AddEventScreenState extends State<AddEventScreen> {
+  /// Controllers and field values
   String? _eventType;
-  TextEditingController _dateController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
   String? _workoutType;
-  TextEditingController _exerciseNameController = TextEditingController();
-  TextEditingController _repsController = TextEditingController();
-  TextEditingController _intensityController = TextEditingController();
-  TextEditingController _durationController = TextEditingController();
+  final TextEditingController _exerciseNameController = TextEditingController();
+  final TextEditingController _repsController = TextEditingController();
+  final TextEditingController _intensityController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
   String? _cardioMetric;
-  TextEditingController _metricValueController = TextEditingController();
-  TextEditingController _mealNameController = TextEditingController();
-  TextEditingController _caloriesController = TextEditingController();
-  TextEditingController _proteinController = TextEditingController();
-  TextEditingController _carbsController = TextEditingController();
-  TextEditingController _fatController = TextEditingController();
-  TextEditingController _noteController = TextEditingController();
+  final TextEditingController _metricValueController = TextEditingController();
+  final TextEditingController _mealNameController = TextEditingController();
+  final TextEditingController _caloriesController = TextEditingController();
+  final TextEditingController _proteinController = TextEditingController();
+  final TextEditingController _carbsController = TextEditingController();
+  final TextEditingController _fatController = TextEditingController();
+  final TextEditingController _noteController = TextEditingController();
   final List<String> _eventSummary = [];
-
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -71,22 +73,61 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
-  void _saveEvent() {
+  Future<void> _saveEvent() async {
     if (_eventSummary.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_eventType == 'Meal' ? 'Meal' : 'Workout'} saved!'),
-        ),
-      );
-      Navigator.pop(context); // Go back to the calendar screen
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please add at least one ${_eventType == 'Meal' ? 'meal' : 'exercise'}.',
+      final prefs = await SharedPreferences.getInstance();
+
+      // Insert date at the beginning of the list for calendar building
+      String formattedDate = '';
+      if (_dateController.text != '') {
+        String divider = '||';
+        formattedDate = _dateController.text + divider;
+      } else {
+        formattedDate = "Invalid Date||"; // Or handle this more gracefully
+      }
+
+      String allSummaries = _eventSummary.join(
+        ', ',
+      ); // Join summaries with a comma and space
+      final combinedString =
+          formattedDate + allSummaries; // Combine date and all summaries
+      // Debug, remove later
+      for (final item in _eventSummary) {
+        print("Saving to SharedPreferences: $item");
+      }
+      // Set event summary in prefs
+      // 1. Retrieve the existing list (if any)
+      List<String>? existingList =
+          prefs.getStringList('myEventSummariesKey') ??
+          []; // Default to empty list
+
+      // 2. Add the new element
+      existingList.add(combinedString);
+
+      // 3. Save the entire updated list
+      await prefs.setStringList('myEventSummariesKey', existingList);
+      // Check if the widget is still in the tree before using BuildContext
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${_eventType == 'Meal' ? 'Meal' : 'Workout'} saved!',
+            ),
           ),
-        ),
-      );
+        );
+        Navigator.pop(context);
+      }
+    } else {
+      // Check if the widget is still in the tree before using BuildContext
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please add at least one ${_eventType == 'Meal' ? 'meal' : 'exercise'}.',
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -107,6 +148,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               TextFormField(
+                enabled: false,
                 controller: _dateController,
                 decoration: const InputDecoration(
                   labelText: 'Date (YYYY-MM-DD)',
@@ -413,7 +455,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 const SizedBox(height: 20),
               ],
               Text(
-                '${_eventType == 'Meal' ? 'Meal' : 'Workout'} Summary (${_dateController.text})',
+                '${_eventType == 'Meal' ? 'Meal' : 'Workout'} Summary:',
                 style: const TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
