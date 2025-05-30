@@ -40,6 +40,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
         : '';
   }
 
+  // Determines event type from form and adds to _eventSummary List
   void _addEventToSummary() {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -53,6 +54,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
               'Cardio: ${_exerciseNameController.text}, Duration: ${_durationController.text}, ${_cardioMetric ?? ''}: ${_metricValueController.text}',
             );
           }
+          // Do not clear fields after add
           //_exerciseNameController.clear();
           //_repsController.clear();
           //_intensityController.clear();
@@ -62,6 +64,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
           _eventSummary.add(
             'Meal: ${_mealNameController.text}, Calories: ${_caloriesController.text}, Protein: ${_proteinController.text}g, Carbs: ${_carbsController.text}g, Fat: ${_fatController.text}g, Note: ${_noteController.text}',
           );
+          // Do not clear fields after add
           //_mealNameController.clear();
           //_caloriesController.clear();
           //_proteinController.clear();
@@ -73,6 +76,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
+  /// [_saveEvent] saves to SharedPreferences using the entire string as the key
+  /// Definitely need to update this
   Future<void> _saveEvent() async {
     if (_eventSummary.isNotEmpty) {
       final prefs = await SharedPreferences.getInstance();
@@ -80,15 +85,17 @@ class _AddEventScreenState extends State<AddEventScreen> {
       // Insert date at the beginning of the list for calendar building
       String formattedDate = '';
       if (_dateController.text != '') {
+        /// Add [divider] after DateTime for delimiting later
+        /// Maybe make this global in the future
         String divider = '||';
         formattedDate = _dateController.text + divider;
       } else {
         formattedDate = "Invalid Date||"; // Or handle this more gracefully
+        // Nevermind, that's plenty graceful
       }
 
-      String allSummaries = _eventSummary.join(
-        ', ',
-      ); // Join summaries with a comma and space
+      // Join summaries with a comma and space
+      String allSummaries = _eventSummary.join(', ');
       final combinedString =
           formattedDate + allSummaries; // Combine date and all summaries
       // Debug, remove later

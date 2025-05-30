@@ -1,3 +1,4 @@
+import 'review_event_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart'; // For date formatting
@@ -32,6 +33,11 @@ class MyApp extends StatelessWidget {
               ModalRoute.of(context)?.settings.arguments as DateTime?;
           return AddEventScreen(selectedDate: selectedDate);
         },
+        '/review_event': (context) {
+          final String eventDetails =
+              ModalRoute.of(context)!.settings.arguments as String;
+          return ReviewEventScreen(eventDetails: eventDetails);
+        },
       },
     );
   }
@@ -55,35 +61,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _eventsFuture = _loadEvents(); // Initialize in initState
   }
 
+  // Async future to pull events from prefs
   Future<Map<DateTime, List<String>>> _loadEvents() async {
+    // Get list of Workout/Meal Strings saved to myEventSummariesKey
     final prefs = await SharedPreferences.getInstance();
     final List<String>? savedEvents = prefs.getStringList(
       'myEventSummariesKey',
     );
+    /* Debug print 
     if (savedEvents != null) {
-      print("Debugging: Raw savedEvents data:");
       for (final event in savedEvents) {
         print("   - $event");
       }
     }
-    print(savedEvents);
+    */
+    // Map of List of Workouts/Meals to DateTime
     final Map<DateTime, List<String>> eventsByDate = {};
 
     if (savedEvents != null) {
       for (String savedEventString in savedEvents) {
         try {
-          final parts = savedEventString.split('||'); // Split by date delimiter
+          final parts = savedEventString.split('||');
+          // Split by date delimiter ( format: YYYY-MM-DD||workout/meal )
+          // Parse date from parts[0]
+          // If more values needed here besides date and summary
+          // Just separate sections with delimiter and update format above
           final parsedDate = DateFormat('yyyy-MM-dd').parse(parts[0]);
           final normalizedDate = DateTime(
             parsedDate.year,
             parsedDate.month,
             parsedDate.day,
           );
+          // Parse summary from parts[1]
           final summary = parts[1];
+
+          // Populate key for given date
           if (!eventsByDate.containsKey(normalizedDate)) {
             eventsByDate[normalizedDate] = [];
           }
-          eventsByDate[normalizedDate]!.add(summary); // Add all summaries
+
+          // Add all summaries
+          eventsByDate[normalizedDate]!.add(savedEventString);
         } catch (e) {
           print('Error processing events data: $e');
         }
@@ -92,6 +110,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return eventsByDate; // Return the populated map
   }
 
+  /// Arrow methods
   void _goToPreviousDay() {
     setState(() {
       _currentDate = _currentDate.subtract(const Duration(days: 1));
@@ -104,18 +123,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  /// Clickable date method
   void _selectDate(DateTime date) {
     setState(() {
       _currentDate = date;
     });
   }
 
+  /// Navigate to Add Event Form
   void _navigateToAddEvent() async {
     await Navigator.pushNamed(context, '/add_event', arguments: _currentDate);
     // After returning from AddEventScreen, reload the events
     setState(() {
       _eventsFuture = _loadEvents();
     });
+  }
+
+  /// Navigate to review event page
+  void _navigateToReviewEvent(String eventDetails) {
+    Navigator.pushNamed(context, '/review_event', arguments: eventDetails);
   }
 
   Widget _buildCalendar(Map<DateTime, List<String>> eventsByDate) {
@@ -130,6 +156,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     final List<Widget> calendarDays = [];
 
+    // Initialize boxes for each day
     for (int i = 0; i < (firstDayOfWeek == 7 ? 0 : firstDayOfWeek); i++) {
       calendarDays.add(const SizedBox(width: 40.0, height: 40.0));
     }
@@ -154,10 +181,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           currentDateInMonth.month == _currentDate.month &&
           currentDateInMonth.day == _currentDate.day;
 
-      //  Check for events on this date
+      // Check for events on this date
       bool hasMeal = false;
       bool hasWorkout = false;
 
+      // Get Events from async call for indicators
       if (eventsByDate.entries.any(
         (entry) =>
             entry.key.year == currentDateInMonth.year &&
@@ -172,7 +200,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   entry.key.day == currentDateInMonth.day,
             )
             .value;
-        for (final summary in eventsForDay) {
+        for (final savedEventString in eventsForDay) {
+          final summary = savedEventString.split('||')[1];
           if (summary.toLowerCase().contains('calories')) {
             // Check for meal
             hasMeal = true;
@@ -185,6 +214,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         }
       }
 
+      // Add onClick functionality
       calendarDays.add(
         GestureDetector(
           onTap: () => _selectDate(currentDateInMonth),
@@ -251,6 +281,77 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  Widget _buildEventsList(Map<DateTime, List<String>> eventsByDate) {
+    final normalizedSelectedDate = DateTime(
+      _currentDate.year,
+      _currentDate.month,
+      _currentDate.day,
+    );
+    final eventsForSelectedDate = eventsByDate.entries
+        .firstWhere(
+          (entry) => entry.key == normalizedSelectedDate,
+          orElse: () => MapEntry(normalizedSelectedDate, []),
+        )
+        .value;
+
+    if (eventsForSelectedDate.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text(
+          'No events scheduled for this date.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16, fontStyle: FontStyle.normal),
+        ),
+      );
+    }
+
+    return Column(
+      children: eventsForSelectedDate.map((eventString) {
+        final parts = eventString.split('||');
+        final summary = parts[1];
+        var buttonText = '';
+        final bool isMeal = summary.toLowerCase().contains('calories');
+        final bool isWorkout =
+            summary.toLowerCase().contains('weight') ||
+            summary.toLowerCase().contains('duration');
+
+        Color buttonColor = Colors.grey;
+        if (isMeal) {
+          buttonColor = Colors.red;
+          buttonText = 'Meal';
+        } else if (isWorkout) {
+          buttonColor = Colors.blue;
+          buttonText = 'Workout';
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          child: Card(
+            color: buttonColor,
+            margin: EdgeInsets.zero,
+            child: InkWell(
+              onTap: () => _navigateToReviewEvent(eventString),
+              child: SizedBox(
+                height: 60.0,
+                child: Center(
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final String formattedDate = DateFormat(
@@ -259,7 +360,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EZ Fitness'),
+        title: const Text('BZ Fitness'),
         backgroundColor: Colors.black,
         titleTextStyle: TextStyle(
           color: Colors.white,
@@ -321,16 +422,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Placeholder for scheduled items
-            SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text('Scheduled Items will go here (scrollable list)'),
-            ),
-
-            const SizedBox(height: 20),
-            // Use FutureBuilder to handle the asynchronous loading of events
-            // Use FutureBuilder to handle the asynchronous loading of events
+            // Use FutureBuilder to handle the asynchronous loading of events for both calendar and event list
             FutureBuilder<Map<DateTime, List<String>>>(
               future: _eventsFuture,
               builder: (context, snapshot) {
@@ -342,12 +434,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   );
                 } else {
                   final eventsByDate = snapshot.data ?? {};
-                  return _buildCalendar(
-                    eventsByDate,
-                  ); // Correct call inside FutureBuilder
+                  return Column(
+                    children: [
+                      _buildEventsList(
+                        eventsByDate,
+                      ), // Display events for the selected date
+                      const SizedBox(height: 20),
+                      _buildCalendar(
+                        eventsByDate,
+                      ), // Call the calendar building widget
+                    ],
+                  );
                 }
               },
-            ), // Call the calendar building widget
+            ),
           ],
         ),
       ),
