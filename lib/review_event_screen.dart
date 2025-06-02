@@ -1,9 +1,10 @@
+import 'package:fitness_app/model/fitness_event.dart';
 import 'package:flutter/material.dart';
 
 class ReviewEventScreen extends StatelessWidget {
-  final String eventDetails;
+  final FitnessEvent event;
 
-  const ReviewEventScreen({super.key, required this.eventDetails});
+  const ReviewEventScreen({super.key, required this.event});
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +37,7 @@ class ReviewEventScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                eventDetails,
+                event.getSummary(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18),
               ),

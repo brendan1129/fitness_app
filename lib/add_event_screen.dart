@@ -1,3 +1,9 @@
+import 'package:fitness_app/event_storage.dart';
+import 'package:fitness_app/model/cardio_workout.dart';
+import 'package:fitness_app/model/event_item.dart';
+import 'package:fitness_app/model/fitness_event.dart';
+import 'package:fitness_app/model/meal.dart';
+import 'package:fitness_app/model/weightlifting_workout.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,9 +49,16 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _carbsController = TextEditingController();
   final TextEditingController _fatController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+
+  // Old simple string version
   final List<String> _eventSummary = [];
+  // New OOP version
+  final List<EventItem> _currentEventItems = [];
   // Form object for Workouts and Meals
   final _formKey = GlobalKey<FormState>();
+
+  // Event storage manager
+  final EventStorage _eventStorage = EventStorage();
 
   @override
   void initState() {
@@ -60,14 +73,42 @@ class _AddEventScreenState extends State<AddEventScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() {
         // Workout session case
+        final eventItemId = _eventStorage.generateNewId();
         if (_eventType == 'Workout Session') {
           if (_workoutType == 'Weight Training') {
+            // Old way
+
             _eventSummary.add(
               'Weight: ${_exerciseNameController.text}, Reps: ${_repsController.text}, Intensity: ${_intensityController.text}',
             );
+
+            // New way
+            _currentEventItems.add(
+              WeightliftingWorkout(
+                id: eventItemId,
+                name: _exerciseNameController.text,
+                reps: int.parse(_repsController.text),
+                intensity: _intensityController.text,
+                isComplete: false,
+              ),
+            );
           } else if (_workoutType == 'Cardio') {
+            // Old way
+
             _eventSummary.add(
               'Cardio: ${_exerciseNameController.text}, Duration: ${_durationController.text}, ${_cardioMetric ?? ''}: ${_metricValueController.text}',
+            );
+
+            // New way
+            _currentEventItems.add(
+              CardioWorkout(
+                id: eventItemId,
+                name: _exerciseNameController.text,
+                duration: _durationController.text,
+                distanceMetric: _cardioMetric ?? '',
+                distanceValue: double.parse(_metricValueController.text),
+                isComplete: false,
+              ),
             );
           }
           // Do not clear fields after add
@@ -79,8 +120,24 @@ class _AddEventScreenState extends State<AddEventScreen> {
         }
         // Meal case
         else if (_eventType == 'Meal') {
+          // Old way
+
           _eventSummary.add(
             'Meal: ${_mealNameController.text}, Calories: ${_caloriesController.text}, Protein: ${_proteinController.text}g, Carbs: ${_carbsController.text}g, Fat: ${_fatController.text}g, Note: ${_noteController.text}',
+          );
+
+          // New way
+          _currentEventItems.add(
+            Meal(
+              id: eventItemId,
+              name: _mealNameController.text,
+              calories: int.parse(_caloriesController.text),
+              protein: int.parse(_proteinController.text),
+              carbs: int.parse(_carbsController.text),
+              fat: int.parse(_fatController.text),
+              notes: _noteController.text,
+              isComplete: false,
+            ),
           );
           // Do not clear fields after add
           //_mealNameController.clear();
@@ -95,61 +152,98 @@ class _AddEventScreenState extends State<AddEventScreen> {
   }
 
   /// saves to SharedPreferences using the entire string as the key
-  /// TODO - update this to be better
   Future<void> _saveEvent() async {
+    /**
+    * TODO: Build event object instead of saving string.
+    */
+    // New way
     if (_eventSummary.isNotEmpty) {
-      /**
-       * TODO: Build event object instead of saving string.
-       */
-      final prefs = await SharedPreferences.getInstance();
+      // 1. Get the Event Date
+      DateTime? eventDate;
+      try {
+        if (_dateController.text.isNotEmpty) {
+          // Parse the date from the controller. Ensure the format is consistent (e.g., ISO 8601 or your app's standard)
+          // For simplicity, assuming a simple date format that DateTime.parse can handle directly,
+          // or you might use intl package for more robust parsing.
+          eventDate = DateTime.parse(_dateController.text);
+        } else {
+          // Handle case where date is not selected (e.g., show error or default to now)
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please select a date for the event.'),
+              ),
+            );
+          }
+          return; // Stop saving if date is missing
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invalid date format: ${e.toString()}')),
+          );
+        }
+        return; // Stop saving on date parsing error
+      }
 
-      // Insert date at the beginning of the list for calendar building
-      String formattedDate = '';
-      if (_dateController.text != '') {
-        /// Add [delimiter] after DateTime for delimiting later
-        /// Maybe make this global in the future
-        String delimiter = '||';
-
-        /// '_dateController.text' should have the date selected from calendar filled and
-        /// unable to be edited
-        formattedDate = _dateController.text + delimiter;
+      // 2. Determine EventType (Workout or Meal)
+      EventType selectedEventType;
+      if (_eventType == 'Workout Session') {
+        selectedEventType = EventType.workout;
+      } else if (_eventType == 'Meal') {
+        selectedEventType = EventType.meal;
       } else {
-        formattedDate = "Invalid Date||"; // Or handle this more gracefully
-        // Nevermind, that's plenty graceful
+        // This case should ideally not happen if _eventType is always controlled by UI
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid event type selected.')),
+          );
+        }
+        return;
       }
 
-      // Join summaries with a comma and space
-      String allSummaries = _eventSummary.join(', ');
-      final combinedString =
-          formattedDate + allSummaries; // Combine date and all summaries
-      // Debug, remove later
-      for (final item in _eventSummary) {
-        print("Saving to SharedPreferences: $item");
-      }
-      // Set event summary in prefs
-      // 1. Retrieve the existing list (if any)
-      List<String>? existingList =
-          prefs.getStringList('myEventSummariesKey') ??
-          []; // Default to empty list
+      // 3. Generate a unique ID for the new Event
+      final newEventId = _eventStorage.generateNewId();
 
-      // 2. Add the new element
-      existingList.add(combinedString);
+      // 4. Create the Event object
+      final newEvent = FitnessEvent(
+        id: newEventId,
+        eventDate: DateFormat('yyyy-MM-dd').parse(_dateController.text),
+        eventType: selectedEventType,
+        eventItems:
+            _currentEventItems, // Use the list of actual EventItem objects
+        isComplete: false, // Default to not complete
+      );
 
-      // 3. Save the entire updated list
-      await prefs.setStringList('myEventSummariesKey', existingList);
-      // Check if the widget is still in the tree before using BuildContext
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${_eventType == 'Meal' ? 'Meal' : 'Workout'} saved!',
+      // 5. Save the Event object using the EventStorage helper
+      try {
+        await _eventStorage.saveEvent(newEvent);
+
+        // Debugging: you can retrieve and print to verify
+        // final savedEvent = await _eventStorage.getEvent(newEvent.id);
+        // print('Successfully saved Event with ID: ${savedEvent?.id}');
+        // print('Event data: ${savedEvent?.toJson()}');
+
+        // Check if the widget is still in the tree before using BuildContext
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${selectedEventType == EventType.meal ? 'Meal' : 'Workout'} saved!',
+              ),
             ),
-          ),
-        );
-        Navigator.pop(context);
+          );
+          Navigator.pop(context); // Pop the screen after successful save
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error saving event: ${e.toString()}')),
+          );
+        }
       }
     } else {
-      // Check if the widget is still in the tree before using BuildContext
+      // No event items were added
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -160,6 +254,67 @@ class _AddEventScreenState extends State<AddEventScreen> {
         );
       }
     }
+    // Old way
+    // if (_eventSummary.isNotEmpty) {
+    //   final prefs = await SharedPreferences.getInstance();
+
+    //   // Insert date at the beginning of the list for calendar building
+    //   String formattedDate = '';
+    //   if (_dateController.text != '') {
+    //     /// Add [delimiter] after DateTime for delimiting later
+    //     /// Maybe make this global in the future
+    //     String delimiter = '||';
+
+    //     /// '_dateController.text' should have the date selected from calendar filled and
+    //     /// unable to be edited
+    //     formattedDate = _dateController.text + delimiter;
+    //   } else {
+    //     formattedDate = "Invalid Date||"; // Or handle this more gracefully
+    //     // Nevermind, that's plenty graceful
+    //   }
+
+    //   // Join summaries with a comma and space
+    //   String allSummaries = _eventSummary.join(', ');
+    //   final combinedString =
+    //       formattedDate + allSummaries; // Combine date and all summaries
+    //   // Debug, remove later
+    //   for (final item in _eventSummary) {
+    //     print("Saving to SharedPreferences: $item");
+    //   }
+    //   // Set event summary in prefs
+    //   // 1. Retrieve the existing list (if any)
+    //   List<String>? existingList =
+    //       prefs.getStringList('myEventSummariesKey') ??
+    //       []; // Default to empty list
+
+    //   // 2. Add the new element
+    //   existingList.add(combinedString);
+
+    //   // 3. Save the entire updated list
+    //   await prefs.setStringList('myEventSummariesKey', existingList);
+    //   // Check if the widget is still in the tree before using BuildContext
+    //   if (mounted) {
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       SnackBar(
+    //         content: Text(
+    //           '${_eventType == 'Meal' ? 'Meal' : 'Workout'} saved!',
+    //         ),
+    //       ),
+    //     );
+    //     Navigator.pop(context);
+    //   }
+    // } else {
+    //   // Check if the widget is still in the tree before using BuildContext
+    //   if (mounted) {
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       SnackBar(
+    //         content: Text(
+    //           'Please add at least one ${_eventType == 'Meal' ? 'meal' : 'exercise'}.',
+    //         ),
+    //       ),
+    //     );
+    //   }
+    // }
   }
 
   @override

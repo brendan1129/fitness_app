@@ -1,7 +1,7 @@
-import 'package:fitness_app/model/cardio_workout';
+import 'package:fitness_app/model/cardio_workout.dart';
 import 'package:fitness_app/model/identifiable.dart';
 import 'package:fitness_app/model/meal.dart';
-import 'package:fitness_app/model/weightlifting_workout';
+import 'package:fitness_app/model/weightlifting_workout.dart';
 
 abstract class EventItem extends Identifiable {
   final String name; // Common property for all event items
@@ -24,9 +24,9 @@ abstract class EventItem extends Identifiable {
         json['type'] as String; // Assuming a 'type' field is added in toJson
     switch (type) {
       case 'cardioWorkout':
-        return CardioWorkout.fromJson(json) as EventItem;
+        return CardioWorkout.fromJson(json);
       case 'weightliftingWorkout':
-        return WeightliftingWorkout.fromJson(json) as EventItem;
+        return WeightliftingWorkout.fromJson(json);
       case 'meal':
         return Meal.fromJson(json);
       default:

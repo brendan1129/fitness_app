@@ -1,3 +1,6 @@
+import 'package:fitness_app/event_storage.dart';
+import 'package:fitness_app/model/fitness_event.dart';
+
 import 'review_event_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,9 +37,9 @@ class MyApp extends StatelessWidget {
           return AddEventScreen(selectedDate: selectedDate);
         },
         '/review_event': (context) {
-          final String eventDetails =
-              ModalRoute.of(context)!.settings.arguments as String;
-          return ReviewEventScreen(eventDetails: eventDetails);
+          final FitnessEvent eventDetails =
+              ModalRoute.of(context)!.settings.arguments as FitnessEvent;
+          return ReviewEventScreen(event: eventDetails);
         },
       },
     );
@@ -53,10 +56,13 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   // List of plan options for the dropdown.
   final List<String> _options = ['All'];
+
+  final EventStorage _eventStorage = EventStorage();
+
   String? _selectedOption;
 
   DateTime _currentDate = DateTime.now();
-  late Future<Map<DateTime, List<String>>>
+  late Future<Map<DateTime, List<FitnessEvent>>>
   _eventsFuture; // Use a Future to hold the events
 
   @override
@@ -66,12 +72,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Async future to pull events from prefs
-  Future<Map<DateTime, List<String>>> _loadEvents() async {
+  Future<Map<DateTime, List<FitnessEvent>>> _loadEvents() async {
     // Get list of Workout/Meal Strings saved to myEventSummariesKey
-    final prefs = await SharedPreferences.getInstance();
-    final List<String>? savedEvents = prefs.getStringList(
-      'myEventSummariesKey',
-    );
+
+    final List<FitnessEvent> allEvents = await _eventStorage.getAllEvents();
+
+    // 2. Map to store Event summaries, grouped by their normalized date
+    final Map<DateTime, List<FitnessEvent>> eventsByDate = {};
+    // 3. Iterate through each Event object
+    for (final event in allEvents) {
+      // Normalize the date to year, month, day to group all events that occurred on the same calendar day.
+      // This removes time components (hours, minutes, seconds)
+      final normalizedDate = DateTime(
+        event.eventDate.year,
+        event.eventDate.month,
+        event.eventDate.day,
+      );
+
+      // Get the summary string for the entire Event object.
+      // The Event class's getSummary() method aggregates summaries from its EventItems.
+      // final eventSummary = event.getSummary();
+
+      // Ensure a list exists for this specific date in the map.
+      // If the date is not yet a key, create a new empty list for it.
+      if (!eventsByDate.containsKey(normalizedDate)) {
+        eventsByDate[normalizedDate] = [];
+      }
+
+      // Add the event's summary to the list associated with its date.
+      eventsByDate[normalizedDate]!.add(event);
+    }
+    // Old way
+    // final prefs = await SharedPreferences.getInstance();
+    // final List<String>? savedEvents = prefs.getStringList(
+    //   'myEventSummariesKey',
+    // );
     /* Debug print 
     if (savedEvents != null) {
       for (final event in savedEvents) {
@@ -79,38 +114,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     }
     */
+
     // Map of List of Workouts/Meals to DateTime
-    final Map<DateTime, List<String>> eventsByDate = {};
+    // final Map<DateTime, List<String>> eventsByDate = {};
 
-    if (savedEvents != null) {
-      for (String savedEventString in savedEvents) {
-        try {
-          final parts = savedEventString.split('||');
-          // Split by date delimiter ( format: YYYY-MM-DD||workout/meal summary )
-          // Parse date from parts[0]
-          // If more values needed here besides date and summary
-          // Just separate sections with delimiter and update format above
-          final parsedDate = DateFormat('yyyy-MM-dd').parse(parts[0]);
-          final normalizedDate = DateTime(
-            parsedDate.year,
-            parsedDate.month,
-            parsedDate.day,
-          );
-          // Parse summary from parts[1]
-          final summary = parts[1];
+    // if (savedEvents != null) {
+    //   for (String savedEventString in savedEvents) {
+    //     try {
+    //       final parts = savedEventString.split('||');
+    //       // Split by date delimiter ( format: YYYY-MM-DD||workout/meal summary )
+    //       // Parse date from parts[0]
+    //       // If more values needed here besides date and summary
+    //       // Just separate sections with delimiter and update format above
+    //       final parsedDate = DateFormat('yyyy-MM-dd').parse(parts[0]);
+    //       final normalizedDate = DateTime(
+    //         parsedDate.year,
+    //         parsedDate.month,
+    //         parsedDate.day,
+    //       );
+    //       // Parse summary from parts[1]
+    //       final summary = parts[1];
 
-          // Populate key for given date
-          if (!eventsByDate.containsKey(normalizedDate)) {
-            eventsByDate[normalizedDate] = [];
-          }
+    //       // Populate key for given date
+    //       if (!eventsByDate.containsKey(normalizedDate)) {
+    //         eventsByDate[normalizedDate] = [];
+    //       }
 
-          // Add all summaries
-          eventsByDate[normalizedDate]!.add(savedEventString);
-        } catch (e) {
-          print('Error processing events data: $e');
-        }
-      }
-    }
+    //       // Add all summaries
+    //       eventsByDate[normalizedDate]!.add(savedEventString);
+    //     } catch (e) {
+    //       print('Error processing events data: $e');
+    //     }
+    //   }
+    // }
     return eventsByDate; // Return the populated map
   }
 
@@ -144,11 +180,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   /// Navigate to review event page
-  void _navigateToReviewEvent(String eventDetails) {
-    Navigator.pushNamed(context, '/review_event', arguments: eventDetails);
+  void _navigateToReviewEvent(FitnessEvent event) {
+    Navigator.pushNamed(context, '/review_event', arguments: event);
   }
 
-  Widget _buildCalendar(Map<DateTime, List<String>> eventsByDate) {
+  Widget _buildCalendar(Map<DateTime, List<FitnessEvent>> eventsByDate) {
     final firstDayOfMonth = DateTime(_currentDate.year, _currentDate.month, 1);
     final lastDayOfMonth = DateTime(
       _currentDate.year,
@@ -204,14 +240,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   entry.key.day == currentDateInMonth.day,
             )
             .value;
-        for (final savedEventString in eventsForDay) {
-          final summary = savedEventString.split('||')[1];
-          if (summary.toLowerCase().contains('calories')) {
+        for (final savedEvent in eventsForDay) {
+          final type = savedEvent.eventType;
+          if (type == EventType.meal) {
             // Check for meal
             hasMeal = true;
           }
-          if (summary.toLowerCase().contains('weight') ||
-              summary.toLowerCase().contains('duration')) {
+          if (type == EventType.workout) {
             // Check for Workout session
             hasWorkout = true;
           }
@@ -285,7 +320,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildEventsList(Map<DateTime, List<String>> eventsByDate) {
+  Widget _buildEventsList(Map<DateTime, List<FitnessEvent>> eventsByDate) {
     final normalizedSelectedDate = DateTime(
       _currentDate.year,
       _currentDate.month,
@@ -310,14 +345,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     return Column(
-      children: eventsForSelectedDate.map((eventString) {
-        final parts = eventString.split('||');
-        final summary = parts[1];
+      children: eventsForSelectedDate.map((event) {
         var buttonText = '';
-        final bool isMeal = summary.toLowerCase().contains('calories');
-        final bool isWorkout =
-            summary.toLowerCase().contains('weight') ||
-            summary.toLowerCase().contains('duration');
+        final bool isMeal = event.eventType == EventType.meal;
+        final bool isWorkout = event.eventType == EventType.workout;
 
         Color buttonColor = Colors.grey;
         if (isMeal) {
@@ -334,7 +365,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             color: buttonColor,
             margin: EdgeInsets.zero,
             child: InkWell(
-              onTap: () => _navigateToReviewEvent(eventString),
+              onTap: () => _navigateToReviewEvent(event),
               child: SizedBox(
                 height: 60.0,
                 child: Center(
@@ -501,7 +532,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             const SizedBox(height: 20),
             // Use FutureBuilder to handle the asynchronous loading of events for both calendar and event list
-            FutureBuilder<Map<DateTime, List<String>>>(
+            FutureBuilder<Map<DateTime, List<FitnessEvent>>>(
               future: _eventsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
