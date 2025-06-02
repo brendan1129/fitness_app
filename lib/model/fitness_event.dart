@@ -7,7 +7,7 @@ enum EventType { meal, workout }
 
 class FitnessEvent extends Identifiable {
   final String? planId; // Nullable if an event doesn't always belong to a plan
-  final DateTime eventDate;
+  DateTime eventDate;
   final EventType eventType;
   final List<EventItem> eventItems;
   bool isComplete; // Can be modified

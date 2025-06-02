@@ -20,20 +20,20 @@ class AddEventScreen extends StatefulWidget {
 
 class _AddEventScreenState extends State<AddEventScreen> {
   /// Controllers and field values
-  /// eventType - Workout Session or Meal
+  /// [eventType] - Workout Session or Meal
   /// TODO: eventParent - Plan that Workout or Meal pertains to
   ///   Should be preloaded from calendar screen
-  /// dateController - Controls Date Field Content
-  /// workoutType - Weight Training or Cardio
-  /// exerciseName - Name of Lift
-  /// reps - Number fo reps for lift
-  /// intensity - Intensity measurement ( i.e. RPE, rep speed )
-  /// duration - duration for cardio
-  /// cardioMetric - Metric for tracking cardio ( i.e. miles, time, # steps, calories burned )
-  /// metricValue - value of cardio-tracking metric ( i.e. 1 mile, 5 minutes )
-  /// mealName - Name of Meal
-  /// calories, protein, carbs, fat - Macros of Meal
-  /// note - Actual contents of meal if necessary
+  /// [dateController] - Controls Date Field Content
+  /// [workoutType] - Weight Training or Cardio
+  /// [exerciseName] - Name of Lift
+  /// [reps] - Number of reps for lift
+  /// [intensity] - Intensity measurement ( i.e. RPE, rep speed )
+  /// [duration] - duration for cardio
+  /// [cardioMetric] - Metric for tracking cardio ( i.e. miles, time, # steps, calories burned )
+  /// [metricValue] - value of cardio-tracking metric ( i.e. 1 mile, 5 minutes )
+  /// [mealName] - Name of Meal
+  /// [calories], [protein], [carbs], [fat] - Macros of Meal
+  /// [note] - Actual contents of meal if necessary
   String? _eventType;
   final TextEditingController _dateController = TextEditingController();
   String? _workoutType;

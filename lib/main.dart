@@ -71,7 +71,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _eventsFuture = _loadEvents(); // Initialize in initState
   }
 
-  // Async future to pull events from prefs
+  /// Async future to pull [FitnessEvent] list from prefs
   Future<Map<DateTime, List<FitnessEvent>>> _loadEvents() async {
     // Get list of Workout/Meal Strings saved to myEventSummariesKey
 
@@ -180,8 +180,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   /// Navigate to review event page
-  void _navigateToReviewEvent(FitnessEvent event) {
-    Navigator.pushNamed(context, '/review_event', arguments: event);
+  void _navigateToReviewEvent(FitnessEvent event) async {
+    await Navigator.pushNamed(context, '/review_event', arguments: event);
+    setState(() {
+      _eventsFuture = _loadEvents();
+    });
   }
 
   Widget _buildCalendar(Map<DateTime, List<FitnessEvent>> eventsByDate) {
