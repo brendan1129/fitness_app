@@ -51,6 +51,10 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
+  // List of plan options for the dropdown.
+  final List<String> _options = ['All'];
+  String? _selectedOption;
+
   DateTime _currentDate = DateTime.now();
   late Future<Map<DateTime, List<String>>>
   _eventsFuture; // Use a Future to hold the events
@@ -82,7 +86,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       for (String savedEventString in savedEvents) {
         try {
           final parts = savedEventString.split('||');
-          // Split by date delimiter ( format: YYYY-MM-DD||workout/meal )
+          // Split by date delimiter ( format: YYYY-MM-DD||workout/meal summary )
           // Parse date from parts[0]
           // If more values needed here besides date and summary
           // Just separate sections with delimiter and update format above
@@ -416,6 +420,80 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     height: 60.0,
                     child: Center(
                       child: Icon(Icons.add, size: 30.0, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+              ), // Padding from screen edges
+              child: SizedBox(
+                height: 60.0, // Fixed height for the dropdown container
+                width: double.infinity, // Ensures it fills the available width
+                child: Container(
+                  // Optional: Add a background color or decoration for visual clarity
+                  decoration: BoxDecoration(
+                    color: Colors.transparent, // Example background color
+                    borderRadius: BorderRadius.circular(
+                      10.0,
+                    ), // Rounded corners
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    // Hides the default underline
+                    child: DropdownButton<String>(
+                      value: _selectedOption, // The currently selected value
+                      isExpanded:
+                          true, // Makes the dropdown fill the available width
+                      dropdownColor:
+                          Colors.white, // Color of the dropdown menu itself
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16.0,
+                      ), // Text style for selected item
+                      // This is the indicator showing what the dropdown is for when nothing is selected.
+                      hint: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'Show Plan', // Your indicator text
+                          style: TextStyle(color: Colors.black, fontSize: 16.0),
+                        ),
+                      ),
+
+                      // Custom icon for the dropdown arrow
+                      icon: const Padding(
+                        padding: EdgeInsets.only(right: 16.0),
+                        child: Icon(
+                          Icons.arrow_drop_down,
+                          color: Colors.black,
+                          size: 30.0,
+                        ),
+                      ),
+
+                      // Called when the user selects an item from the dropdown
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedOption = newValue;
+                          print('Selected: $newValue'); // For demonstration
+                        });
+                      },
+
+                      // Builds the list of items for the dropdown menu
+                      items: _options.map<DropdownMenuItem<String>>((
+                        String value,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Text(value),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ),

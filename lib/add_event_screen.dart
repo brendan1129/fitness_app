@@ -14,6 +14,20 @@ class AddEventScreen extends StatefulWidget {
 
 class _AddEventScreenState extends State<AddEventScreen> {
   /// Controllers and field values
+  /// eventType - Workout Session or Meal
+  /// TODO: eventParent - Plan that Workout or Meal pertains to
+  ///   Should be preloaded from calendar screen
+  /// dateController - Controls Date Field Content
+  /// workoutType - Weight Training or Cardio
+  /// exerciseName - Name of Lift
+  /// reps - Number fo reps for lift
+  /// intensity - Intensity measurement ( i.e. RPE, rep speed )
+  /// duration - duration for cardio
+  /// cardioMetric - Metric for tracking cardio ( i.e. miles, time, # steps, calories burned )
+  /// metricValue - value of cardio-tracking metric ( i.e. 1 mile, 5 minutes )
+  /// mealName - Name of Meal
+  /// calories, protein, carbs, fat - Macros of Meal
+  /// note - Actual contents of meal if necessary
   String? _eventType;
   final TextEditingController _dateController = TextEditingController();
   String? _workoutType;
@@ -30,6 +44,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _fatController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final List<String> _eventSummary = [];
+  // Form object for Workouts and Meals
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -44,6 +59,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   void _addEventToSummary() {
     if (_formKey.currentState!.validate()) {
       setState(() {
+        // Workout session case
         if (_eventType == 'Workout Session') {
           if (_workoutType == 'Weight Training') {
             _eventSummary.add(
@@ -60,7 +76,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
           //_intensityController.clear();
           //_durationController.clear();
           //_metricValueController.clear();
-        } else if (_eventType == 'Meal') {
+        }
+        // Meal case
+        else if (_eventType == 'Meal') {
           _eventSummary.add(
             'Meal: ${_mealNameController.text}, Calories: ${_caloriesController.text}, Protein: ${_proteinController.text}g, Carbs: ${_carbsController.text}g, Fat: ${_fatController.text}g, Note: ${_noteController.text}',
           );
@@ -76,19 +94,25 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
-  /// [_saveEvent] saves to SharedPreferences using the entire string as the key
-  /// Definitely need to update this
+  /// saves to SharedPreferences using the entire string as the key
+  /// TODO - update this to be better
   Future<void> _saveEvent() async {
     if (_eventSummary.isNotEmpty) {
+      /**
+       * TODO: Build event object instead of saving string.
+       */
       final prefs = await SharedPreferences.getInstance();
 
       // Insert date at the beginning of the list for calendar building
       String formattedDate = '';
       if (_dateController.text != '') {
-        /// Add [divider] after DateTime for delimiting later
+        /// Add [delimiter] after DateTime for delimiting later
         /// Maybe make this global in the future
-        String divider = '||';
-        formattedDate = _dateController.text + divider;
+        String delimiter = '||';
+
+        /// '_dateController.text' should have the date selected from calendar filled and
+        /// unable to be edited
+        formattedDate = _dateController.text + delimiter;
       } else {
         formattedDate = "Invalid Date||"; // Or handle this more gracefully
         // Nevermind, that's plenty graceful
@@ -144,8 +168,18 @@ class _AddEventScreenState extends State<AddEventScreen> {
       appBar: AppBar(
         title: const Text('Add New Event'),
         backgroundColor: Colors.black,
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 20.0),
-        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 25.0,
+          fontWeight: FontWeight.bold,
+          shadows: <Shadow>[
+            Shadow(
+              blurRadius: 8.0,
+              color: Colors.blue,
+              offset: Offset(0.0, 0.0),
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

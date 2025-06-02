@@ -1,0 +1,34 @@
+class WeightliftingWorkout extends Workout {
+  final int reps;
+  final String intensity; // Could also be a custom Intensity enum or class
+
+  WeightliftingWorkout({
+    required String id,
+    required String name,
+    required this.reps,
+    required this.intensity,
+    bool isComplete = false,
+  }) : super(id: id, name: name, workoutType: WorkoutType.weightlifting, isComplete: isComplete);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': 'weightliftingWorkout', // Important for polymorphic deserialization
+      'name': name,
+      'isComplete': isComplete,
+      'reps': reps,
+      'intensity': intensity,
+    };
+  }
+
+  factory EventItem.fromJson(Map<String, dynamic> json) {
+    return EventItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      isComplete: json['isComplete'] as bool,
+      reps: json['reps'] as int,
+      intensity: json['intensity'] as String,
+    );
+  }
+}

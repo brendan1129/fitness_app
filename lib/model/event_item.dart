@@ -1,0 +1,36 @@
+import 'package:fitness_app/model/cardio_workout';
+import 'package:fitness_app/model/identifiable.dart';
+import 'package:fitness_app/model/meal.dart';
+import 'package:fitness_app/model/weightlifting_workout';
+
+abstract class EventItem extends Identifiable {
+  final String name; // Common property for all event items
+  bool isComplete;
+
+  EventItem({required String id, required this.name, this.isComplete = false})
+    : super(id);
+
+  // Mark this specific item as complete
+  void markAsComplete() {
+    isComplete = true;
+  }
+
+  // Abstract method to convert to JSON for persistence
+  Map<String, dynamic> toJson();
+
+  // Factory constructor for deserialization (polymorphic)
+  static EventItem fromJson(Map<String, dynamic> json) {
+    final type =
+        json['type'] as String; // Assuming a 'type' field is added in toJson
+    switch (type) {
+      case 'cardioWorkout':
+        return CardioWorkout.fromJson(json) as EventItem;
+      case 'weightliftingWorkout':
+        return WeightliftingWorkout.fromJson(json) as EventItem;
+      case 'meal':
+        return Meal.fromJson(json);
+      default:
+        throw ArgumentError('Unknown EventItem type: $type');
+    }
+  }
+}

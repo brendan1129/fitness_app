@@ -9,7 +9,7 @@ class ReviewEventScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review Event'),
+        title: const Text('Review & Start Event'),
         backgroundColor: Colors.black,
         titleTextStyle: const TextStyle(
           color: Colors.white,

@@ -1,0 +1,34 @@
+class CardioWorkout extends Workout {
+  final String distanceMetric;
+  final double distanceValue;
+
+  CardioWorkout({
+    required String id,
+    required String name,
+    required this.distanceMetric,
+    required this.distanceValue,
+    bool isComplete = false,
+  }) : super(id: id, name: name, workoutType: WorkoutType.cardio, isComplete: isComplete);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': 'cardioWorkout', // Important for polymorphic deserialization
+      'name': name,
+      'isComplete': isComplete,
+      'distanceMetric': distanceMetric,
+      'distanceValue': distanceValue,
+    };
+  }
+
+  factory EventItem.fromJson(Map<String, dynamic> json) {
+    return EventItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      isComplete: json['isComplete'] as bool,
+      distanceMetric: json['distanceMetric'] as String,
+      distanceValue: (json['distanceValue'] as num).toDouble(),
+    );
+  }
+}
