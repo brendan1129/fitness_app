@@ -46,7 +46,9 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.6 # Check pub.dev for the latest version
+  
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -58,6 +60,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -98,3 +103,10 @@ flutter_launcher_icons:
   # adaptive_icon_background: "#ffffff" # For Android adaptive icons
   # adaptive_icon_foreground: "assets/app_icon/icon_foreground.png" # For Android adaptive icons (if you have a separate foreground)
   remove_alpha_ios: true # If your iOS icon has an alpha channel you want removed
+
+flutter_native_splash:
+  color: "#000000" # Background color of the splash screen (hex code)
+  image: "assets/app_icon/bz-fitness-logo-512.png" 
+  android: true
+  ios: true
+  web: false 
