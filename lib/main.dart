@@ -74,9 +74,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   /// Async future to pull [FitnessEvent] list from prefs
   Future<Map<DateTime, List<FitnessEvent>>> _loadEvents() async {
     // Get list of Workout/Meal Strings saved to myEventSummariesKey
-
     final List<FitnessEvent> allEvents = await _eventStorage.getAllEvents();
-
     // 2. Map to store Event summaries, grouped by their normalized date
     final Map<DateTime, List<FitnessEvent>> eventsByDate = {};
     // 3. Iterate through each Event object

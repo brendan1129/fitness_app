@@ -6,7 +6,6 @@ import 'package:fitness_app/model/meal.dart';
 import 'package:fitness_app/model/weightlifting_workout.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEventScreen extends StatefulWidget {
   /// Take in selectedDate from home page
@@ -38,6 +37,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _dateController = TextEditingController();
   String? _workoutType;
   final TextEditingController _exerciseNameController = TextEditingController();
+  final TextEditingController _setsController = TextEditingController();
   final TextEditingController _repsController = TextEditingController();
   final TextEditingController _intensityController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
@@ -52,6 +52,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
   // Old simple string version
   final List<String> _eventSummary = [];
+  // Map to hold TextEditingControllers for each dynamically displayed EventItem.
+  // Key: EventItem.id, Value: Map<String, TextEditingController>
+  final Map<String, Map<String, TextEditingController>> _itemControllers = {};
+
   // New OOP version
   final List<EventItem> _currentEventItems = [];
   // Form object for Workouts and Meals
@@ -68,55 +72,103 @@ class _AddEventScreenState extends State<AddEventScreen> {
         : '';
   }
 
-  // Determines event type from form and adds to _eventSummary List
-  void _addEventToSummary() {
+  @override
+  void dispose() {
+    // Dispose all controllers for the main input form
+    _dateController.dispose();
+    _exerciseNameController.dispose();
+    _repsController.dispose();
+    _setsController.dispose();
+    _intensityController.dispose();
+    _durationController.dispose();
+    _metricValueController.dispose();
+    _mealNameController.dispose();
+    _caloriesController.dispose();
+    _proteinController.dispose();
+    _carbsController.dispose();
+    _fatController.dispose();
+    _noteController.dispose();
+
+    // Dispose controllers for dynamically created EventItem fields
+    _itemControllers.forEach((itemId, controllersMap) {
+      controllersMap.forEach((fieldName, controller) {
+        controller.dispose();
+      });
+    });
+    super.dispose();
+  }
+
+  // Determines event type from form and adds EventItem to _currentEventItems List
+  void _addEventItemToEvent() {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        // Workout session case
+        // 1. Generate event ItemId
         final eventItemId = _eventStorage.generateNewId();
+
+        // 2. Create nullable EventItem
+        EventItem? eventItem;
+        // Map to store controllers for this specific new item
+        Map<String, TextEditingController> controllersForNewItem = {};
+
+        // 2. Determine eventType for object to add
         if (_eventType == 'Workout Session') {
           if (_workoutType == 'Weight Training') {
-            // Old way
-
-            _eventSummary.add(
-              'Weight: ${_exerciseNameController.text}, Reps: ${_repsController.text}, Intensity: ${_intensityController.text}',
+            // Keeping eventSummary for now because it feeds the scrollableList, but
+            // TODO: Change from simple string to editable fields, keep scrollableList
+            // _eventSummary.add(
+            //   'Weight: ${_exerciseNameController.text}, Reps: ${_repsController.text}, Intensity: ${_intensityController.text}',
+            // );
+            // Initialize controllers for the new WeightliftingWorkout item
+            controllersForNewItem['name'] = TextEditingController(
+              text: _exerciseNameController.text,
+            );
+            controllersForNewItem['sets'] = TextEditingController(
+              text: _setsController.text,
+            );
+            controllersForNewItem['reps'] = TextEditingController(
+              text: _repsController.text,
+            );
+            controllersForNewItem['intensity'] = TextEditingController(
+              text: _intensityController.text,
             );
 
-            // New way
-            _currentEventItems.add(
-              WeightliftingWorkout(
-                id: eventItemId,
-                name: _exerciseNameController.text,
-                reps: int.parse(_repsController.text),
-                intensity: _intensityController.text,
-                isComplete: false,
-              ),
+            eventItem = WeightliftingWorkout(
+              id: eventItemId,
+              name: _exerciseNameController.text,
+              sets: int.parse(_setsController.text),
+              reps: int.parse(_repsController.text),
+              intensity: _intensityController.text,
+              isComplete: false,
             );
           } else if (_workoutType == 'Cardio') {
-            // Old way
-
-            _eventSummary.add(
-              'Cardio: ${_exerciseNameController.text}, Duration: ${_durationController.text}, ${_cardioMetric ?? ''}: ${_metricValueController.text}',
+            // Keeping eventSummary for now because it feeds the scrollableList, but
+            // TODO: Change from simple string to editable fields, keep scrollableList
+            // _eventSummary.add(
+            //   'Cardio: ${_exerciseNameController.text}, Duration: ${_durationController.text}, ${_cardioMetric ?? ''}: ${_metricValueController.text}',
+            // );
+            // Initialize controllers for the new CardioWorkout item
+            controllersForNewItem['name'] = TextEditingController(
+              text: _exerciseNameController.text,
+            );
+            controllersForNewItem['duration'] = TextEditingController(
+              text: _durationController.text,
+            );
+            controllersForNewItem['metric'] = TextEditingController(
+              text: _cardioMetric ?? '',
+            );
+            controllersForNewItem['value'] = TextEditingController(
+              text: _metricValueController.text,
             );
 
-            // New way
-            _currentEventItems.add(
-              CardioWorkout(
-                id: eventItemId,
-                name: _exerciseNameController.text,
-                duration: _durationController.text,
-                distanceMetric: _cardioMetric ?? '',
-                distanceValue: double.parse(_metricValueController.text),
-                isComplete: false,
-              ),
+            eventItem = CardioWorkout(
+              id: eventItemId,
+              name: _exerciseNameController.text,
+              duration: _durationController.text,
+              distanceMetric: _cardioMetric ?? '',
+              distanceValue: double.parse(_metricValueController.text),
+              isComplete: false,
             );
           }
-          // Do not clear fields after add
-          //_exerciseNameController.clear();
-          //_repsController.clear();
-          //_intensityController.clear();
-          //_durationController.clear();
-          //_metricValueController.clear();
         }
         // Meal case
         else if (_eventType == 'Meal') {
@@ -127,46 +179,57 @@ class _AddEventScreenState extends State<AddEventScreen> {
           );
 
           // New way
-          _currentEventItems.add(
-            Meal(
-              id: eventItemId,
-              name: _mealNameController.text,
-              calories: int.parse(_caloriesController.text),
-              protein: int.parse(_proteinController.text),
-              carbs: int.parse(_carbsController.text),
-              fat: int.parse(_fatController.text),
-              notes: _noteController.text,
-              isComplete: false,
-            ),
+          eventItem = Meal(
+            id: eventItemId,
+            name: _mealNameController.text,
+            calories: int.parse(_caloriesController.text),
+            protein: int.parse(_proteinController.text),
+            carbs: int.parse(_carbsController.text),
+            fat: int.parse(_fatController.text),
+            notes: _noteController.text,
+            isComplete: false,
           );
-          // Do not clear fields after add
-          //_mealNameController.clear();
-          //_caloriesController.clear();
-          //_proteinController.clear();
-          //_carbsController.clear();
-          //_fatController.clear();
-          //_noteController.clear();
+          // Initialize controllers for the new Meal item
+          controllersForNewItem['name'] = TextEditingController(
+            text: _mealNameController.text,
+          );
+          controllersForNewItem['calories'] = TextEditingController(
+            text: _caloriesController.text,
+          );
+          controllersForNewItem['protein'] = TextEditingController(
+            text: _proteinController.text,
+          );
+          controllersForNewItem['carbs'] = TextEditingController(
+            text: _carbsController.text,
+          );
+          controllersForNewItem['fat'] = TextEditingController(
+            text: _fatController.text,
+          );
+          controllersForNewItem['notes'] = TextEditingController(
+            text: _noteController.text,
+          );
+        } else {
+          // Shouldn't happen since it's handled by dropdown
+          throw Exception("Unable to determine valid EventType");
         }
+        // 4. Add eventItem to currentEventItems, assert
+        _currentEventItems.add(eventItem!);
+        _itemControllers[eventItemId] = controllersForNewItem;
       });
     }
   }
 
   /// saves to SharedPreferences using the entire string as the key
   Future<void> _saveEvent() async {
-    /**
-    * TODO: Build event object instead of saving string.
-    */
     // New way
-    if (_eventSummary.isNotEmpty) {
+    if (_currentEventItems.isNotEmpty) {
       // 1. Get the Event Date
       DateTime? eventDate;
       try {
         if (_dateController.text.isNotEmpty) {
-          // Parse the date from the controller. Ensure the format is consistent (e.g., ISO 8601 or your app's standard)
-          // For simplicity, assuming a simple date format that DateTime.parse can handle directly,
-          // or you might use intl package for more robust parsing.
           eventDate = DateTime.parse(_dateController.text);
         } else {
+          eventDate = DateTime.now(); // Default to current date
           // Handle case where date is not selected (e.g., show error or default to now)
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -208,18 +271,19 @@ class _AddEventScreenState extends State<AddEventScreen> {
       // 4. Create the Event object
       final newEvent = FitnessEvent(
         id: newEventId,
-        eventDate: DateFormat('yyyy-MM-dd').parse(_dateController.text),
+        eventDate: eventDate!,
         eventType: selectedEventType,
         eventItems:
             _currentEventItems, // Use the list of actual EventItem objects
         isComplete: false, // Default to not complete
       );
 
+      print(newEvent.toJson().toString());
       // 5. Save the Event object using the EventStorage helper
       try {
         await _eventStorage.saveEvent(newEvent);
 
-        // Debugging: you can retrieve and print to verify
+        // Debugging: retrieve and print to verify
         // final savedEvent = await _eventStorage.getEvent(newEvent.id);
         // print('Successfully saved Event with ID: ${savedEvent?.id}');
         // print('Event data: ${savedEvent?.toJson()}');
@@ -254,67 +318,254 @@ class _AddEventScreenState extends State<AddEventScreen> {
         );
       }
     }
-    // Old way
-    // if (_eventSummary.isNotEmpty) {
-    //   final prefs = await SharedPreferences.getInstance();
+  }
 
-    //   // Insert date at the beginning of the list for calendar building
-    //   String formattedDate = '';
-    //   if (_dateController.text != '') {
-    //     /// Add [delimiter] after DateTime for delimiting later
-    //     /// Maybe make this global in the future
-    //     String delimiter = '||';
+  // Helper method to build a row of TextFormFields for an EventItem
+  Widget _buildEventItemRow(EventItem item, int index) {
+    // Retrieve the controllers for this specific item.
+    // We assert non-null because controllers are initialized when item is added.
+    final itemControllers = _itemControllers[item.id]!;
 
-    //     /// '_dateController.text' should have the date selected from calendar filled and
-    //     /// unable to be edited
-    //     formattedDate = _dateController.text + delimiter;
-    //   } else {
-    //     formattedDate = "Invalid Date||"; // Or handle this more gracefully
-    //     // Nevermind, that's plenty graceful
-    //   }
+    List<Widget> fields = [];
+    String itemTitle = '';
 
-    //   // Join summaries with a comma and space
-    //   String allSummaries = _eventSummary.join(', ');
-    //   final combinedString =
-    //       formattedDate + allSummaries; // Combine date and all summaries
-    //   // Debug, remove later
-    //   for (final item in _eventSummary) {
-    //     print("Saving to SharedPreferences: $item");
-    //   }
-    //   // Set event summary in prefs
-    //   // 1. Retrieve the existing list (if any)
-    //   List<String>? existingList =
-    //       prefs.getStringList('myEventSummariesKey') ??
-    //       []; // Default to empty list
+    // Determine the type of EventItem and build appropriate TextFormFields
+    if (item is WeightliftingWorkout) {
+      itemTitle = 'Weightlifting: ';
+      fields.addAll([
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['name'],
+            decoration: const InputDecoration(labelText: 'Name'),
+            onChanged: (value) {
+              setState(() {
+                item.name = value;
+              });
+            },
+          ),
+        ),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['sets'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Sets'),
+            onChanged: (value) {
+              setState(() {
+                item.sets = int.tryParse(value) ?? item.sets;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['reps'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Reps'),
+            onChanged: (value) {
+              setState(() {
+                item.reps = int.tryParse(value) ?? item.reps;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['intensity'],
+            decoration: const InputDecoration(labelText: 'Intensity'),
+            onChanged: (value) {
+              setState(() {
+                item.intensity = value;
+              });
+            },
+          ),
+        ),
+      ]);
+    } else if (item is CardioWorkout) {
+      itemTitle = 'Cardio: ';
+      fields.addAll([
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['name'],
+            decoration: const InputDecoration(labelText: 'Name'),
+            onChanged: (value) {
+              setState(() {
+                item.name = value;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['duration'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Duration'),
+            onChanged: (value) {
+              setState(() {
+                item.duration = value;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['metric'],
+            decoration: const InputDecoration(labelText: 'Metric'),
+            onChanged: (value) {
+              setState(() {
+                item.distanceMetric = value;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['value'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Value'),
+            onChanged: (value) {
+              setState(() {
+                item.distanceValue =
+                    double.tryParse(value) ?? item.distanceValue;
+              });
+            },
+          ),
+        ),
+      ]);
+    } else if (item is Meal) {
+      itemTitle = 'Meal: ';
+      fields.addAll([
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['name'],
+            decoration: const InputDecoration(labelText: 'Name'),
+            onChanged: (value) {
+              setState(() {
+                item.name = value;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['calories'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Calories'),
+            onChanged: (value) {
+              setState(() {
+                item.calories = int.tryParse(value) ?? item.calories;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['protein'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Protein'),
+            onChanged: (value) {
+              setState(() {
+                item.protein = int.tryParse(value) ?? item.protein;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['carbs'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Carbs'),
+            onChanged: (value) {
+              setState(() {
+                item.carbs = int.tryParse(value) ?? item.carbs;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['fat'],
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Fat'),
+            onChanged: (value) {
+              setState(() {
+                item.fat = int.tryParse(value) ?? item.fat;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          child: TextFormField(
+            controller: itemControllers['notes'],
+            maxLines: 1, // Keep it single line in summary for compactness
+            decoration: const InputDecoration(labelText: 'Notes'),
+            onChanged: (value) {
+              setState(() {
+                item.notes = value;
+              });
+            },
+          ),
+        ),
+      ]);
+    }
 
-    //   // 2. Add the new element
-    //   existingList.add(combinedString);
-
-    //   // 3. Save the entire updated list
-    //   await prefs.setStringList('myEventSummariesKey', existingList);
-    //   // Check if the widget is still in the tree before using BuildContext
-    //   if (mounted) {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(
-    //         content: Text(
-    //           '${_eventType == 'Meal' ? 'Meal' : 'Workout'} saved!',
-    //         ),
-    //       ),
-    //     );
-    //     Navigator.pop(context);
-    //   }
-    // } else {
-    //   // Check if the widget is still in the tree before using BuildContext
-    //   if (mounted) {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(
-    //         content: Text(
-    //           'Please add at least one ${_eventType == 'Meal' ? 'meal' : 'exercise'}.',
-    //         ),
-    //       ),
-    //     );
-    //   }
-    // }
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$itemTitle ${index + 1}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      // Dispose controllers for the item being removed
+                      _itemControllers[item.id]?.forEach((
+                        fieldName,
+                        controller,
+                      ) {
+                        controller.dispose();
+                      });
+                      _itemControllers.remove(
+                        item.id,
+                      ); // Remove from controller map
+                      _currentEventItems.removeAt(
+                        index,
+                      ); // Remove from event items list
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Use Wrap for better responsiveness and flow of text fields
+            Wrap(
+              spacing: 8.0, // horizontal spacing between items
+              runSpacing: 8.0, // vertical spacing between lines
+              children: fields,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -433,6 +684,24 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   ),
                   const SizedBox(height: 10),
                   TextFormField(
+                    controller: _setsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Sets',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the number of sets';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
                     controller: _repsController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -543,7 +812,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   ),
                 ],
                 ElevatedButton(
-                  onPressed: _addEventToSummary,
+                  onPressed: _addEventItemToEvent,
                   child: const Text('Add Workout'),
                 ),
                 const SizedBox(height: 20),
@@ -645,7 +914,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: _addEventToSummary,
+                  onPressed: _addEventItemToEvent,
                   child: const Text('Add Meal'),
                 ),
                 const SizedBox(height: 20),
@@ -658,22 +927,28 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ),
               ),
               const SizedBox(height: 10),
+              // Display EventItems as editable rows
               SizedBox(
-                height: 100.0,
-                child: _eventSummary.isEmpty
+                height:
+                    200.0, // Increased height for better visibility of multiple rows
+                child: _currentEventItems.isEmpty
                     ? Text(
                         'No ${_eventType == 'Meal' ? 'meals' : 'exercises'} added yet.',
                       )
                     : ListView.builder(
-                        itemCount: _eventSummary.length,
+                        itemCount: _currentEventItems.length,
                         itemBuilder: (context, index) {
-                          return Text(_eventSummary[index]);
+                          // Build and return the editable row for each EventItem
+                          return _buildEventItemRow(
+                            _currentEventItems[index],
+                            index,
+                          );
                         },
                       ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _eventSummary.isNotEmpty ? _saveEvent : null,
+                onPressed: _currentEventItems.isNotEmpty ? _saveEvent : null,
                 child: Text(
                   'Save ${_eventType == 'Meal' ? 'Meal' : 'Workout'}',
                 ),

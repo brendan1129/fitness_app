@@ -1,12 +1,14 @@
 import 'package:fitness_app/model/workout.dart';
 
 class WeightliftingWorkout extends Workout {
-  final int reps;
-  final String intensity; // Could also be a custom Intensity enum or class
+  int sets;
+  int reps;
+  String intensity; // Could also be a custom Intensity enum or class
 
   WeightliftingWorkout({
     required super.id,
     required super.name,
+    required this.sets,
     required this.reps,
     required this.intensity,
     super.isComplete,
@@ -20,6 +22,7 @@ class WeightliftingWorkout extends Workout {
           'weightliftingWorkout', // Important for polymorphic deserialization
       'name': name,
       'isComplete': isComplete,
+      'sets': sets,
       'reps': reps,
       'intensity': intensity,
     };
@@ -30,6 +33,7 @@ class WeightliftingWorkout extends Workout {
       id: json['id'] as String,
       name: json['name'] as String,
       isComplete: json['isComplete'] as bool,
+      sets: json['sets'] as int,
       reps: json['reps'] as int,
       intensity: json['intensity'] as String,
     );

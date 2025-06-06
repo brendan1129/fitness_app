@@ -6,10 +6,10 @@ import 'package:fitness_app/model/identifiable.dart';
 enum EventType { meal, workout }
 
 class FitnessEvent extends Identifiable {
-  final String? planId; // Nullable if an event doesn't always belong to a plan
+  String? planId; // Nullable if an event doesn't always belong to a plan
   DateTime eventDate;
-  final EventType eventType;
-  final List<EventItem> eventItems;
+  EventType eventType;
+  List<EventItem> eventItems;
   bool isComplete; // Can be modified
 
   FitnessEvent({

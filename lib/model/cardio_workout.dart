@@ -1,9 +1,9 @@
 import 'package:fitness_app/model/workout.dart';
 
 class CardioWorkout extends Workout {
-  final String distanceMetric;
-  final double distanceValue;
-  final String duration;
+  String distanceMetric;
+  double distanceValue;
+  String duration;
 
   CardioWorkout({
     required super.id,

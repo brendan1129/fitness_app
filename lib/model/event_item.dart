@@ -4,7 +4,7 @@ import 'package:fitness_app/model/meal.dart';
 import 'package:fitness_app/model/weightlifting_workout.dart';
 
 abstract class EventItem extends Identifiable {
-  final String name; // Common property for all event items
+  String name; // Common property for all event items
   bool isComplete;
 
   EventItem({required String id, required this.name, this.isComplete = false})

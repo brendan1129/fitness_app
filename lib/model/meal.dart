@@ -1,11 +1,11 @@
 import 'package:fitness_app/model/event_item.dart';
 
 class Meal extends EventItem {
-  final int calories;
-  final int carbs;
-  final int fat;
-  final int protein;
-  final String? notes; // Nullable
+  int calories;
+  int carbs;
+  int fat;
+  int protein;
+  String? notes; // Nullable
 
   Meal({
     required super.id,
