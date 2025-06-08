@@ -23,4 +23,9 @@ samples, guidance on mobile development, and a full API reference.
 <!--- 2025-06-05 01:11:00 - Automated trivial update. -->
 <!--- 2025-06-06 01:11:03 - Automated trivial update. -->
 <!--- 2025-06-07 01:11:00 - Automated trivial update. -->
+<<<<<<< HEAD
 >>>>>>> 7afcb73 (Update README.md)
+=======
+<!--- 2025-06-07 18:35:16 - Automated trivial update. -->
+<!--- 2025-06-08 01:11:01 - Automated trivial update. -->
+>>>>>>> a52a990 (Update README.md)
