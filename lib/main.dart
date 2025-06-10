@@ -346,17 +346,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Column(
       children: eventsForSelectedDate.map((event) {
-        var buttonText = '';
+        var buttonText = event.eventName;
         final bool isMeal = event.eventType == EventType.meal;
         final bool isWorkout = event.eventType == EventType.workout;
-
         Color buttonColor = Colors.grey;
         if (isMeal) {
           buttonColor = Colors.red;
-          buttonText = 'Meal';
         } else if (isWorkout) {
           buttonColor = Colors.blue;
-          buttonText = 'Workout';
         }
 
         return Padding(

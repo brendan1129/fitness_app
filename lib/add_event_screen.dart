@@ -34,6 +34,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   /// [calories], [protein], [carbs], [fat] - Macros of Meal
   /// [note] - Actual contents of meal if necessary
   String? _eventType;
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   String? _workoutType;
   final TextEditingController _exerciseNameController = TextEditingController();
@@ -271,7 +272,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
       // 4. Create the Event object
       final newEvent = FitnessEvent(
         id: newEventId,
-        eventDate: eventDate!,
+        eventName: _nameController.text,
+        eventDate: eventDate,
         eventType: selectedEventType,
         eventItems:
             _currentEventItems, // Use the list of actual EventItem objects
@@ -331,7 +333,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
     // Determine the type of EventItem and build appropriate TextFormFields
     if (item is WeightliftingWorkout) {
-      itemTitle = 'Weightlifting: ';
+      itemTitle = 'Exercise: ';
       fields.addAll([
         SizedBox(
           child: TextFormField(
@@ -604,6 +606,19 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the date';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Event Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the event name';
                   }
                   return null;
                 },

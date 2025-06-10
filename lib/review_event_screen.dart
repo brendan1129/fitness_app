@@ -22,9 +22,7 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
   void initState() {
     super.initState();
     // 2. Initialize controllers with values from the passed `Event` object
-    _eventNameController = TextEditingController(
-      text: widget.event.eventType.toString(),
-    );
+    _eventNameController = TextEditingController(text: widget.event.eventName);
     // For DateTime, you'll likely want to format it into a displayable string
     _eventDateController = TextEditingController(
       text: widget.event.eventDate.toLocal().toIso8601String().split('T')[0],
@@ -36,7 +34,7 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
     super.didUpdateWidget(oldWidget);
     // 3. Update controllers if the `event` object itself changes (e.g., if this widget is rebuilt with a different event)
     if (widget.event.id != oldWidget.event.id) {
-      _eventNameController.text = widget.event.eventType.toString();
+      _eventNameController.text = widget.event.eventName;
       _eventDateController.text = widget.event.eventDate
           .toLocal()
           .toIso8601String()
@@ -120,6 +118,20 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
                   }
                 },
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _eventNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Event Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the event name';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () async {
@@ -129,6 +141,8 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
                   );
 
                   widget.event.eventDate = updatedDate;
+                  widget.event.eventName = updatedName;
+
                   print('Updated Name: $updatedName');
                   print('Updated Date: $updatedDate');
 

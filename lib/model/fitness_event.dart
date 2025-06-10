@@ -7,6 +7,7 @@ enum EventType { meal, workout }
 
 class FitnessEvent extends Identifiable {
   String? planId; // Nullable if an event doesn't always belong to a plan
+  String eventName;
   DateTime eventDate;
   EventType eventType;
   List<EventItem> eventItems;
@@ -15,6 +16,7 @@ class FitnessEvent extends Identifiable {
   FitnessEvent({
     required String id,
     this.planId,
+    required this.eventName,
     required this.eventDate,
     required this.eventType,
     required this.eventItems,
@@ -40,6 +42,7 @@ class FitnessEvent extends Identifiable {
     return {
       'id': id,
       'planId': planId,
+      'eventName': eventName,
       'eventDate': eventDate.toIso8601String(),
       'eventType': eventType.name,
       'eventItems': eventItems.map((item) => item.toJson()).toList(),
@@ -51,6 +54,7 @@ class FitnessEvent extends Identifiable {
     return FitnessEvent(
       id: json['id'] as String,
       planId: json['planId'] as String?,
+      eventName: json['eventName'],
       eventDate: DateTime.parse(json['eventDate'] as String),
       eventType: EventType.values.firstWhere(
         (e) => e.name == json['eventType'],
