@@ -6,9 +6,13 @@ import 'package:fitness_app/model/weightlifting_workout.dart';
 abstract class EventItem extends Identifiable {
   String name; // Common property for all event items
   bool isComplete;
-
-  EventItem({required String id, required this.name, this.isComplete = false})
-    : super(id);
+  String notes; // Added for user reflections
+  EventItem({
+    required String id,
+    required this.name,
+    this.isComplete = false,
+    this.notes = "",
+  }) : super(id);
 
   // Mark this specific item as complete
   void markAsComplete() {

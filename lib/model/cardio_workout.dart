@@ -12,6 +12,7 @@ class CardioWorkout extends Workout {
     required this.distanceMetric,
     required this.distanceValue,
     super.isComplete,
+    super.notes,
   }) : super(workoutType: WorkoutType.cardio);
 
   @override
@@ -20,6 +21,7 @@ class CardioWorkout extends Workout {
       'id': id,
       'type': 'cardioWorkout', // Important for polymorphic deserialization
       'name': name,
+      'notes': super.notes,
       'isComplete': isComplete,
       'duration': duration,
       'distanceMetric': distanceMetric,
@@ -31,6 +33,7 @@ class CardioWorkout extends Workout {
     return CardioWorkout(
       id: json['id'] as String,
       name: json['name'] as String,
+      notes: json['notes'] ?? '',
       isComplete: json['isComplete'] as bool,
       duration: json['duration'] as String,
       distanceMetric: json['distanceMetric'] as String,

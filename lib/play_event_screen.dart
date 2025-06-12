@@ -1,4 +1,5 @@
 // event_checklist_screen.dart
+import 'package:fitness_app/event_item_detail_screen.dart';
 import 'package:fitness_app/event_storage.dart';
 import 'package:fitness_app/model/fitness_event.dart'; // Import FitnessEvent
 import 'package:fitness_app/model/event_item.dart'; // Import EventItem
@@ -29,24 +30,28 @@ class _PlayEventScreenState extends State<PlayEventScreen> {
       // Update the actual event object as well, for persistence
       _currentEvent.updateEventItemCompletion(item.id, isComplete ?? false);
     });
-    _currentEvent.isComplete = _isEventComplete(_currentEvent.eventItems);
-    _saveEventChanges(); // Save changes to storage immediately
+    _currentEvent.isComplete = _currentEvent.eventItems.every(
+      (item) => item.isComplete,
+    );
+    _saveEventChanges(true); // Save changes to storage immediately
   }
 
-  // Helper for checking event completion
-  bool _isEventComplete(List<EventItem> events) {
-    for (EventItem i in events) {
-      if (!i.isComplete) {
-        return false;
-      }
-    }
-    return true;
+  // This callback will be passed to EventItemDetailScreen to update _currentEvent
+  void _onEventItemUpdated(FitnessEvent updatedEvent) {
+    setState(() {
+      _currentEvent = updatedEvent;
+      // You might also check here if all items are completed to update _currentEvent.isCompleted
+      _currentEvent.isComplete = _currentEvent.eventItems.every(
+        (item) => item.isComplete,
+      );
+    });
+    _saveEventChanges(false); // Save changes to storage
   }
 
-  Future<void> _saveEventChanges() async {
+  Future<void> _saveEventChanges(bool logEnabled) async {
     try {
       await _eventStorage.saveEvent(_currentEvent);
-      if (mounted) {
+      if (mounted && logEnabled) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Event progress saved!'),
@@ -70,13 +75,35 @@ class _PlayEventScreenState extends State<PlayEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Activity: ${_currentEvent.eventName}'),
+        title: Text('${_currentEvent.eventName} Checklist'),
         backgroundColor: Colors.black,
         titleTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 20.0,
           fontWeight: FontWeight.bold,
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _currentEvent.isComplete
+                  ? Icons.check_circle
+                  : Icons.circle_outlined,
+              color: _currentEvent.isComplete
+                  ? Colors.greenAccent
+                  : Colors.white,
+            ),
+            tooltip: _currentEvent.isComplete
+                ? 'Event Completed'
+                : 'Event Not Completed',
+            onPressed: () {
+              // Optionally allow toggling event completion from here
+              setState(() {
+                _currentEvent.isComplete = !_currentEvent.isComplete;
+              });
+              _saveEventChanges(true);
+            },
+          ),
+        ],
       ),
       body: _currentEvent.eventItems.isEmpty
           ? const Center(
@@ -94,7 +121,26 @@ class _PlayEventScreenState extends State<PlayEventScreen> {
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                   elevation: 2,
-                  child: CheckboxListTile(
+                  child: ListTile(
+                    // Changed from CheckboxListTile to ListTile
+                    onTap: () async {
+                      // Navigate to the detail screen for this item
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventItemDetailScreen(
+                            currentEvent:
+                                _currentEvent, // Pass the entire event
+                            initialEventItem: item,
+                            initialItemIndex: index,
+                            onEventUpdated:
+                                _onEventItemUpdated, // Pass the callback
+                          ),
+                        ),
+                      );
+                      // If result is not null (e.g., a specific return from the detail screen)
+                      // you can handle it here if needed, but the callback already updates state.
+                    },
                     title: Text(
                       item.name,
                       style: TextStyle(
@@ -107,14 +153,15 @@ class _PlayEventScreenState extends State<PlayEventScreen> {
                     ),
                     subtitle: Text(
                       _currentEvent.eventType == EventType.workout
-                          ? 'Exercise'
-                          : 'Meal Item',
+                          ? 'Workout'
+                          : 'Meal',
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
-                    value: item.isComplete,
-                    onChanged: (bool? newValue) {
-                      _toggleItemCompletion(item, newValue);
-                    },
+                    trailing:
+                        item
+                            .isComplete // Conditional checkmark
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null, // No icon if not completed
                   ),
                 );
               },

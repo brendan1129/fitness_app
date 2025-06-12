@@ -5,16 +5,14 @@ class Meal extends EventItem {
   int carbs;
   int fat;
   int protein;
-  String? notes; // Nullable
-
   Meal({
     required super.id,
     required super.name,
+    super.notes = "",
     required this.calories,
     required this.carbs,
     required this.fat,
     required this.protein,
-    this.notes,
     super.isComplete,
   });
 
@@ -24,12 +22,12 @@ class Meal extends EventItem {
       'id': id,
       'type': 'meal', // Important for polymorphic deserialization
       'name': name,
+      'notes': super.notes,
       'isComplete': isComplete,
       'calories': calories,
       'carbs': carbs,
       'fat': fat,
       'protein': protein,
-      'notes': notes,
     };
   }
 
@@ -37,12 +35,12 @@ class Meal extends EventItem {
     return Meal(
       id: json['id'] as String,
       name: json['name'] as String,
+      notes: json['notes'] ?? '',
       isComplete: json['isComplete'] as bool,
       calories: json['calories'] as int,
       carbs: json['carbs'] as int,
       fat: json['fat'] as int,
       protein: json['protein'] as int,
-      notes: json['notes'] as String?,
     );
   }
 }

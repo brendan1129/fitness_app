@@ -10,5 +10,6 @@ abstract class Workout extends EventItem {
     required super.name,
     required this.workoutType,
     super.isComplete,
+    super.notes,
   });
 }

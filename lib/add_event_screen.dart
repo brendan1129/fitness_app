@@ -49,7 +49,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _proteinController = TextEditingController();
   final TextEditingController _carbsController = TextEditingController();
   final TextEditingController _fatController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
 
   // Old simple string version
   final List<String> _eventSummary = [];
@@ -88,7 +87,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
-    _noteController.dispose();
 
     // Dispose controllers for dynamically created EventItem fields
     _itemControllers.forEach((itemId, controllersMap) {
@@ -175,9 +173,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
         else if (_eventType == 'Meal') {
           // Old way
 
-          _eventSummary.add(
-            'Meal: ${_mealNameController.text}, Calories: ${_caloriesController.text}, Protein: ${_proteinController.text}g, Carbs: ${_carbsController.text}g, Fat: ${_fatController.text}g, Note: ${_noteController.text}',
-          );
+          // _eventSummary.add(
+          //   'Meal: ${_mealNameController.text}, Calories: ${_caloriesController.text}, Protein: ${_proteinController.text}g, Carbs: ${_carbsController.text}g, Fat: ${_fatController.text}g, Note: ${_noteController.text}',
+          // );
 
           // New way
           eventItem = Meal(
@@ -187,7 +185,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
             protein: int.parse(_proteinController.text),
             carbs: int.parse(_carbsController.text),
             fat: int.parse(_fatController.text),
-            notes: _noteController.text,
             isComplete: false,
           );
           // Initialize controllers for the new Meal item
@@ -205,9 +202,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
           );
           controllersForNewItem['fat'] = TextEditingController(
             text: _fatController.text,
-          );
-          controllersForNewItem['notes'] = TextEditingController(
-            text: _noteController.text,
           );
         } else {
           // Shouldn't happen since it's handled by dropdown
@@ -505,18 +499,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          child: TextFormField(
-            controller: itemControllers['notes'],
-            maxLines: 1, // Keep it single line in summary for compactness
-            decoration: const InputDecoration(labelText: 'Notes'),
-            onChanged: (value) {
-              setState(() {
-                item.notes = value;
-              });
-            },
-          ),
-        ),
       ]);
     }
 
@@ -921,15 +903,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     }
                     return null;
                   },
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _noteController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
-                    border: OutlineInputBorder(),
-                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(

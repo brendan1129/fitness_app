@@ -12,6 +12,7 @@ class WeightliftingWorkout extends Workout {
     required this.reps,
     required this.intensity,
     super.isComplete,
+    super.notes = "",
   }) : super(workoutType: WorkoutType.weightlifting);
 
   @override
@@ -21,6 +22,7 @@ class WeightliftingWorkout extends Workout {
       'type':
           'weightliftingWorkout', // Important for polymorphic deserialization
       'name': name,
+      'notes': super.notes,
       'isComplete': isComplete,
       'sets': sets,
       'reps': reps,
@@ -32,6 +34,7 @@ class WeightliftingWorkout extends Workout {
     return WeightliftingWorkout(
       id: json['id'] as String,
       name: json['name'] as String,
+      notes: json['notes'] ?? '',
       isComplete: json['isComplete'] as bool,
       sets: json['sets'] as int,
       reps: json['reps'] as int,
