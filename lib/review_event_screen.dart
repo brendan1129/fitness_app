@@ -1,5 +1,6 @@
 import 'package:fitness_app/event_storage.dart';
 import 'package:fitness_app/model/fitness_event.dart'; // Assuming FitnessEvent is your Event class
+import 'package:fitness_app/play_event_screen.dart';
 import 'package:flutter/material.dart';
 
 class ReviewEventScreen extends StatefulWidget {
@@ -65,16 +66,19 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: Colors.black, // Change your color here
+        ),
         title: const Text('Review & Start Event'),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey,
         titleTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 25.0,
           fontWeight: FontWeight.bold,
           shadows: <Shadow>[
             Shadow(
-              blurRadius: 8.0,
-              color: Colors.blue,
+              blurRadius: 16.0,
+              color: Colors.black,
               offset: Offset(0.0, 0.0),
             ),
           ],
@@ -95,6 +99,7 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 18),
               ),
+              Text("Completed: ${event.isComplete.toString()}"),
               const SizedBox(height: 16),
               TextField(
                 controller: _eventDateController,
@@ -133,6 +138,20 @@ class _ReviewEventScreenState extends State<ReviewEventScreen> {
                 },
               ),
               const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  // Navigate to the new EventChecklistScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          PlayEventScreen(event: widget.event),
+                    ),
+                  );
+                },
+                child: const Text('Start Event'),
+              ),
+              const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () async {
                   String updatedName = _eventNameController.text;

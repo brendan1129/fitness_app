@@ -350,10 +350,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final bool isMeal = event.eventType == EventType.meal;
         final bool isWorkout = event.eventType == EventType.workout;
         Color buttonColor = Colors.grey;
-        if (isMeal) {
-          buttonColor = Colors.red;
-        } else if (isWorkout) {
-          buttonColor = Colors.blue;
+
+        // Button color determination: Gray if complete, red/blue if incomplete
+        if (event.isComplete) {
+          buttonColor = Colors.grey;
+        } else {
+          if (isMeal) {
+            buttonColor = Colors.red;
+          } else if (isWorkout) {
+            buttonColor = Colors.blue;
+          }
         }
 
         return Padding(
@@ -365,15 +371,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
               onTap: () => _navigateToReviewEvent(event),
               child: SizedBox(
                 height: 60.0,
-                child: Center(
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                child: Padding(
+                  // Add Padding here for inner content
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ), // Adjust as needed
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween, // Pushes items to ends
+                    children: [
+                      Expanded(
+                        // Allows text to take available space
+                        child: Text(
+                          buttonText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.left, // Align text to the left
+                          overflow: TextOverflow.ellipsis, // Handle long text
+                        ),
+                      ),
+                      // Add your checkmark icon here
+                      if (event.isComplete)
+                        const Icon(
+                          Icons
+                              .check_circle, // Or Icons.check, Icons.done, etc.
+                          color: Colors.white,
+                          size: 24.0, // Adjust size as needed
+                        ),
+                      if (!event.isComplete)
+                        const Icon(
+                          Icons.play_arrow,
+                          color: Colors.white,
+                          size: 24.0,
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -393,15 +427,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('BZ Fitness'),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey,
         titleTextStyle: TextStyle(
           color: Colors.white,
           fontSize: 25.0,
           fontWeight: FontWeight.bold,
           shadows: <Shadow>[
             Shadow(
-              blurRadius: 8.0,
-              color: Colors.blue,
+              blurRadius: 16.0,
+              color: Colors.black,
               offset: Offset(0.0, 0.0),
             ),
           ],
@@ -447,7 +481,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: const SizedBox(
                     height: 60.0,
                     child: Center(
-                      child: Icon(Icons.add, size: 30.0, color: Colors.white),
+                      child: Icon(Icons.add, size: 30.0, color: Colors.black),
                     ),
                   ),
                 ),

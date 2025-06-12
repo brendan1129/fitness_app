@@ -29,6 +29,14 @@ class FitnessEvent extends Identifiable {
     isComplete = true;
   }
 
+  // Method to update completion status of an EventItem
+  void updateEventItemCompletion(String itemId, bool isComplete) {
+    final itemIndex = eventItems.indexWhere((item) => item.id == itemId);
+    if (itemIndex != -1) {
+      eventItems[itemIndex].isComplete = isComplete;
+    }
+  }
+
   // Method to get a summary string of the event (for display)
   String getSummary() {
     // Example: "Workout on 2025-05-31: Running, Weightlifting"

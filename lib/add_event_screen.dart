@@ -333,7 +333,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
     // Determine the type of EventItem and build appropriate TextFormFields
     if (item is WeightliftingWorkout) {
-      itemTitle = 'Exercise: ';
+      itemTitle = 'Exercise #';
       fields.addAll([
         SizedBox(
           child: TextFormField(
@@ -385,7 +385,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
         ),
       ]);
     } else if (item is CardioWorkout) {
-      itemTitle = 'Cardio: ';
+      itemTitle = 'Exercise #';
       fields.addAll([
         SizedBox(
           child: TextFormField(
@@ -439,7 +439,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
         ),
       ]);
     } else if (item is Meal) {
-      itemTitle = 'Meal: ';
+      itemTitle = 'Meal #';
       fields.addAll([
         SizedBox(
           child: TextFormField(
@@ -531,7 +531,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '$itemTitle ${index + 1}',
+                    '$itemTitle${index + 1}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -574,16 +574,19 @@ class _AddEventScreenState extends State<AddEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: Colors.black, // Change your color here
+        ),
         title: const Text('Add New Event'),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey,
         titleTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 25.0,
           fontWeight: FontWeight.bold,
           shadows: <Shadow>[
             Shadow(
-              blurRadius: 8.0,
-              color: Colors.blue,
+              blurRadius: 16.0,
+              color: Colors.black,
               offset: Offset(0.0, 0.0),
             ),
           ],
@@ -610,6 +613,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -927,13 +931,18 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _addEventItemToEvent,
                   child: const Text('Add Meal'),
                 ),
-                const SizedBox(height: 20),
               ],
+              ElevatedButton(
+                onPressed: _currentEventItems.isNotEmpty ? _saveEvent : null,
+                child: Text(
+                  'Save ${_eventType == 'Meal' ? 'Meal' : 'Workout'}',
+                ),
+              ),
               Text(
                 '${_eventType == 'Meal' ? 'Meal' : 'Workout'} Summary:',
                 style: const TextStyle(
@@ -945,7 +954,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
               // Display EventItems as editable rows
               SizedBox(
                 height:
-                    200.0, // Increased height for better visibility of multiple rows
+                    400.0, // Increased height for better visibility of multiple rows
                 child: _currentEventItems.isEmpty
                     ? Text(
                         'No ${_eventType == 'Meal' ? 'meals' : 'exercises'} added yet.',
@@ -960,13 +969,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                           );
                         },
                       ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _currentEventItems.isNotEmpty ? _saveEvent : null,
-                child: Text(
-                  'Save ${_eventType == 'Meal' ? 'Meal' : 'Workout'}',
-                ),
               ),
             ],
           ),
